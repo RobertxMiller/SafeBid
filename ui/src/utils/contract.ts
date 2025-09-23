@@ -1,0 +1,118 @@
+// SafeBid合约的ABI和地址
+export const SAFEBID_CONTRACT_ADDRESS = '0x...' // 部署后需要更新
+
+export const SAFEBID_ABI = [
+  {
+    "inputs": [
+      {"internalType": "string", "name": "itemName", "type": "string"},
+      {"internalType": "uint256", "name": "startPrice", "type": "uint256"},
+      {"internalType": "uint256", "name": "startTime", "type": "uint256"}
+    ],
+    "name": "createAuction",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "auctionId", "type": "uint256"},
+      {"internalType": "externalEuint32", "name": "encryptedBid", "type": "bytes32"},
+      {"internalType": "bytes", "name": "inputProof", "type": "bytes"}
+    ],
+    "name": "placeBid",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "auctionId", "type": "uint256"}],
+    "name": "getAuction",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "uint256", "name": "id", "type": "uint256"},
+          {"internalType": "address", "name": "seller", "type": "address"},
+          {"internalType": "string", "name": "itemName", "type": "string"},
+          {"internalType": "uint256", "name": "startPrice", "type": "uint256"},
+          {"internalType": "uint256", "name": "startTime", "type": "uint256"},
+          {"internalType": "uint256", "name": "endTime", "type": "uint256"},
+          {"internalType": "bool", "name": "active", "type": "bool"},
+          {"internalType": "bool", "name": "ended", "type": "bool"},
+          {"internalType": "address", "name": "winner", "type": "address"},
+          {"internalType": "uint256", "name": "finalPrice", "type": "uint256"}
+        ],
+        "internalType": "struct SafeBid.Auction",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTotalAuctions",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "auctionId", "type": "uint256"}],
+    "name": "checkAuctionEnd",
+    "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "auctionId", "type": "uint256"}],
+    "name": "completePurchase",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "auctionId", "type": "uint256"},
+      {"indexed": true, "internalType": "address", "name": "seller", "type": "address"},
+      {"indexed": false, "internalType": "string", "name": "itemName", "type": "string"},
+      {"indexed": false, "internalType": "uint256", "name": "startPrice", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "startTime", "type": "uint256"}
+    ],
+    "name": "AuctionCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "auctionId", "type": "uint256"},
+      {"indexed": true, "internalType": "address", "name": "bidder", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256"}
+    ],
+    "name": "BidPlaced",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "auctionId", "type": "uint256"},
+      {"indexed": true, "internalType": "address", "name": "winner", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "finalPrice", "type": "uint256"}
+    ],
+    "name": "AuctionEnded",
+    "type": "event"
+  }
+] as const
+
+export interface Auction {
+  id: bigint
+  seller: string
+  itemName: string
+  startPrice: bigint
+  startTime: bigint
+  endTime: bigint
+  active: boolean
+  ended: boolean
+  winner: string
+  finalPrice: bigint
+}
