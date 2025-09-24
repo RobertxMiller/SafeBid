@@ -11,7 +11,7 @@ export function Header() {
               SafeBid
             </h1>
             <span className="header-badge">
-              Confidential
+              Zama Powered
             </span>
           </div>
           <ConnectButton />

@@ -144,68 +144,184 @@ export default function Home() {
   return (
     <div>
       <Header />
-      <main style={{ maxWidth: 920, margin: '0 auto', padding: 16 }}>
+      <main style={{ maxWidth: '72rem', margin: '0 auto', padding: '2rem 1rem' }}>
         {!hasContract && (
-          <div style={{ background: '#fff3cd', color: '#664d03', padding: 12, borderRadius: 8, marginBottom: 12 }}>
-            Contract address not configured. Please deploy and run `npm run sync:frontend`.
+          <div className="card card-padding" style={{ background: 'var(--warning-50)', color: 'var(--warning-600)', marginBottom: '1.5rem', border: '1px solid var(--warning-200)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.25rem' }}>⚠️</span>
+              <strong>Contract Not Configured</strong>
+            </div>
+            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.875rem' }}>Please deploy the contract and run <code>npm run sync:frontend</code>.</p>
           </div>
         )}
-        <section style={{ background: '#fff', padding: 16, borderRadius: 8, marginBottom: 16 }}>
-          <h2 style={{ marginTop: 0 }}>Create Auction</h2>
-          <form onSubmit={onCreateAuction} style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-            <input placeholder="Item name" value={name} onChange={e => setName(e.target.value)} style={{ padding: 8, flex: 1 }} />
-            <input placeholder="Start price (ETH)" value={priceEth} onChange={e => setPriceEth(e.target.value)} style={{ padding: 8, width: 180 }} />
-            <button type="submit" disabled={!hasContract || !address || !name || !priceEth} style={{ padding: '8px 14px' }}>Create</button>
+        <section className="card card-padding" style={{ marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>🎯</span>
+            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--gray-800)' }}>Create New Auction</h2>
+          </div>
+          <form onSubmit={onCreateAuction} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1rem', alignItems: 'end' }} className="responsive-form">
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }} className="form-inputs">
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--gray-700)', marginBottom: '0.5rem' }}>Item Name</label>
+                <input className="input" placeholder="Enter item name" value={name} onChange={e => setName(e.target.value)} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--gray-700)', marginBottom: '0.5rem' }}>Start Price (ETH)</label>
+                <input className="input" placeholder="0.1" type="number" step="0.001" value={priceEth} onChange={e => setPriceEth(e.target.value)} />
+              </div>
+            </div>
+            <button className="btn btn-primary mobile-button-full" type="submit" disabled={!hasContract || !address || !name || !priceEth}>
+              <span style={{ marginRight: '0.5rem' }}>🚀</span>
+              Create Auction
+            </button>
           </form>
         </section>
 
-        <section style={{ background: '#fff', padding: 16, borderRadius: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ marginTop: 0 }}>Auctions</h2>
-            <button onClick={refresh} disabled={loading} style={{ padding: '6px 10px' }}>{loading ? 'Loading...' : 'Refresh'}</button>
-            
+        <section className="card card-padding">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '1.5rem' }}>🏆</span>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--gray-800)' }}>Live Auctions</h2>
+            </div>
+            <button className="btn btn-secondary btn-sm" onClick={refresh} disabled={loading}>
+              <span style={{ marginRight: '0.5rem' }}>{loading ? '⏳' : '🔄'}</span>
+              {loading ? 'Loading...' : 'Refresh'}
+            </button>
           </div>
-          <p>You bid price is encrypted</p>
-          {auctions.length === 0 && <div>No auctions</div>}
-          <div style={{ display: 'grid', gap: 12 }}>
-            {auctions.map(a => (
-              <div key={a.id.toString()} style={{ border: '1px solid #eee', borderRadius: 8, padding: 12 }}>
-                <div style={{ fontWeight: 600 }}>{a.itemName}</div>
-                <div style={{ color: '#555', fontSize: 13 }}>Seller: {a.seller}</div>
-                <div style={{ color: '#555', fontSize: 13 }}>Start price: {formatEth(a.startPrice)}</div>
-                <div style={{ color: '#555', fontSize: 13 }}>Start time: {formatLocalTime(a.startTime)}</div>
-                <TimerRow a={a} nowTs={nowTs} bidTimeout={bidTimeout} />
-                <div style={{ marginTop: 8 }}>
-                  {a.active && !a.ended && (
-                    <BidBox 
-                      auctionId={a.id} 
+          <div style={{ background: 'var(--primary-50)', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1.5rem', border: '1px solid var(--primary-200)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-700)' }}>
+              <span style={{ fontSize: '1.25rem' }}>🔐</span>
+              <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>All bid prices are encrypted and remain confidential until auction ends</span>
+            </div>
+          </div>
+          {auctions.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--gray-500)' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
+              <h3 style={{ margin: '0 0 0.5rem 0', color: 'var(--gray-600)' }}>No Auctions Yet</h3>
+              <p style={{ margin: 0, fontSize: '0.875rem' }}>Create the first auction to get started!</p>
+            </div>
+          )}
+          <div style={{ display: 'grid', gap: '1.5rem' }}>
+            {auctions.map(a => {
+              const isActive = a.active && !a.ended;
+              const isMyAuction = address === a.seller;
+              const canBid = isActive && !isMyAuction;
+
+              return (
+              <div key={a.id.toString()} className="card card-padding" style={{ position: 'relative', overflow: 'hidden' }}>
+                {/* Status Banner */}
+                <div style={{ position: 'absolute', top: '1rem', right: '1rem' }}>
+                  <span className={`badge ${
+                    isActive ? 'badge-active' : a.ended ? 'badge-ended' : 'badge-pending'
+                  }`}>
+                    {isActive ? 'Live' : a.ended ? 'Ended' : 'Pending'}
+                  </span>
+                </div>
+
+                {/* Auction Header */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <span style={{ fontSize: '1.25rem' }}>📦</span>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600, color: 'var(--gray-800)' }}>{a.itemName}</h3>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', fontSize: '0.875rem', color: 'var(--gray-600)' }} className="mobile-auction-info">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>👤</span>
+                      <span><strong>Seller:</strong> {a.seller.slice(0, 6)}...{a.seller.slice(-4)}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>💰</span>
+                      <span><strong>Start Price:</strong> {formatEth(a.startPrice)}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>🕐</span>
+                      <span><strong>Started:</strong> {formatLocalTime(a.startTime)}</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Timer */}
+                <div style={{ background: isActive ? 'var(--success-50)' : 'var(--gray-50)', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1.5rem', border: `1px solid ${isActive ? 'var(--success-200)' : 'var(--gray-200)'}` }}>
+                  <TimerRow a={a} nowTs={nowTs} bidTimeout={bidTimeout} />
+                </div>
+                {/* Bidding Section */}
+                {canBid && (
+                  <div style={{ background: 'var(--primary-50)', padding: '1.5rem', borderRadius: '0.75rem', marginBottom: '1.5rem', border: '1px solid var(--primary-200)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '1.25rem' }}>🎯</span>
+                      <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--primary-700)' }}>Place Your Bid</h4>
+                    </div>
+                    <BidBox
+                      auctionId={a.id}
                       seller={a.seller}
-                      onPlace={onPlaceBid} 
+                      onPlace={onPlaceBid}
                       disabled={
-                        zamaLoading || !zama || !!zamaError ||
-                        (!!address && address.toLowerCase() === a.seller.toLowerCase())
-                      } 
+                        zamaLoading || !zama || !!zamaError
+                      }
                     />
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <button onClick={() => onCheckEnd(a.id)} disabled={!a.active || a.ended} style={{ padding: '6px 10px' }}>Check End</button>
+                  </div>
+                )}
+
+                {isMyAuction && isActive && (
+                  <div style={{ background: 'var(--warning-50)', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1.5rem', border: '1px solid var(--warning-200)', textAlign: 'center' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--warning-600)', fontWeight: 500 }}>👑 This is your auction</span>
+                  </div>
+                )}
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }} className="mobile-button-group">
+                  <button className="btn btn-secondary btn-sm" onClick={() => onCheckEnd(a.id)} disabled={!a.active || a.ended}>
+                    <span style={{ marginRight: '0.5rem' }}>🔍</span>
+                    Check End
+                  </button>
+
                   <DecryptMyBidButton a={a} address={address} publicClient={publicClient} zama={zama} signerPromise={signerPromise} />
-                  {address === a.seller && (
-                    <button onClick={() => onEnd(a.id)} disabled={!a.active || a.ended} style={{ padding: '6px 10px' }}>End</button>
+
+                  {isMyAuction && (
+                    <>
+                      <button className="btn btn-warning btn-sm" onClick={() => onEnd(a.id)} disabled={!a.active || a.ended}>
+                        <span style={{ marginRight: '0.5rem' }}>🏁</span>
+                        End Auction
+                      </button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => onEmergency(a.id)} disabled={!a.active || a.ended}>
+                        <span style={{ marginRight: '0.5rem' }}>🚨</span>
+                        Emergency Stop
+                      </button>
+                    </>
                   )}
-                  {address === a.seller && (
-                    <button onClick={() => onEmergency(a.id)} disabled={!a.active || a.ended} style={{ padding: '6px 10px' }}>Emergency Stop</button>
-                  )}
+
                   {!a.active && a.ended && address === a.winner && (
-                    <button onClick={() => onPurchase(a)} style={{ padding: '6px 10px' }}>Complete Purchase</button>
+                    <button className="btn btn-success" onClick={() => onPurchase(a)}>
+                      <span style={{ marginRight: '0.5rem' }}>✅</span>
+                      Complete Purchase
+                    </button>
                   )}
                 </div>
+                {/* Winner Display */}
                 {!a.active && a.ended && (
-                  <div style={{ color: '#0a0', marginTop: 6 }}>Winner: {a.winner !== '0x0000000000000000000000000000000000000000' ? a.winner : 'None'}</div>
+                  <div style={{
+                    marginTop: '1.5rem',
+                    padding: '1rem',
+                    background: a.winner !== '0x0000000000000000000000000000000000000000' ? 'var(--success-50)' : 'var(--gray-50)',
+                    border: `1px solid ${a.winner !== '0x0000000000000000000000000000000000000000' ? 'var(--success-200)' : 'var(--gray-200)'}`,
+                    borderRadius: '0.75rem',
+                    textAlign: 'center'
+                  }}>
+                    {a.winner !== '0x0000000000000000000000000000000000000000' ? (
+                      <div>
+                        <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🏆</div>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--success-600)' }}>Winner: {a.winner.slice(0, 6)}...{a.winner.slice(-4)}</div>
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>❌</div>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>No Winner</div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
         </section>
       </main>
@@ -216,9 +332,30 @@ export default function Home() {
 function BidBox({ auctionId, seller, onPlace, disabled }: { auctionId: bigint; seller: Address; onPlace: (id: bigint, seller: Address, bidValue: string) => Promise<void>; disabled?: boolean }) {
   const [bid, setBid] = useState<string>('');
   return (
-    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-      <input type="number" step="0.000000001" placeholder="Bid (ETH, ≤ 4.294967295)" value={bid} onChange={e => setBid(e.target.value)} style={{ padding: 8, width: 220 }} />
-      <button onClick={() => onPlace(auctionId, seller, bid)} disabled={disabled || !bid} style={{ padding: '6px 10px' }}>Place Bid</button>
+    <div style={{ display: 'flex', gap: '1rem', alignItems: 'end' }} className="bid-form">
+      <div style={{ flex: 1 }}>
+        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: 'var(--primary-700)', marginBottom: '0.5rem' }}>
+          Your Bid Amount
+        </label>
+        <input
+          className="input"
+          type="number"
+          step="0.000000001"
+          placeholder="Enter bid amount (max 4.294967295 ETH)"
+          value={bid}
+          onChange={e => setBid(e.target.value)}
+          style={{ fontSize: '1rem' }}
+        />
+      </div>
+      <button
+        className="btn btn-primary"
+        onClick={() => onPlace(auctionId, seller, bid)}
+        disabled={disabled || !bid}
+        style={{ minWidth: '140px' }}
+      >
+        <span style={{ marginRight: '0.5rem' }}>🚀</span>
+        Place Bid
+      </button>
     </div>
   );
 }
@@ -237,11 +374,27 @@ function TimerRow({ a, nowTs, bidTimeout }: { a: AuctionItem; nowTs: number; bid
     const remain = endAt > now ? endAt - now : 0n;
     label = remain > 0n ? `Ends in: ${formatDuration(remain)}` : 'Pending end: please Check End';
   }
+  const isUrgent = endAt && endAt - now <= 300n && endAt > now; // Less than 5 minutes remaining
+
   return (
-    <div style={{ color: '#d97706', fontSize: 13, marginTop: 4 }}>
-      {label}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        fontSize: '0.875rem',
+        fontWeight: 600,
+        color: isUrgent ? 'var(--error-600)' : a.active ? 'var(--success-600)' : 'var(--gray-600)'
+      }}>
+        <span style={{ fontSize: '1rem' }}>
+          {a.active ? (isUrgent ? '⏰' : '🕒') : a.ended ? '✅' : '⏳'}
+        </span>
+        {label}
+      </div>
       {endAt && (
-        <span> • Ends at: {formatLocalTime(endAt)}</span>
+        <div style={{ fontSize: '0.75rem', color: 'var(--gray-500)' }}>
+          Ends at: {formatLocalTime(endAt)}
+        </div>
       )}
     </div>
   );
@@ -302,7 +455,10 @@ function DecryptMyBidButton({ a, address, publicClient, zama, signerPromise }: {
     }
   };
   return (
-    <button onClick={onClick} disabled={busy || !address} style={{ padding: '6px 10px' }}>
+    <button className="btn btn-secondary btn-sm" onClick={onClick} disabled={busy || !address}>
+      <span style={{ marginRight: '0.5rem' }}>
+        {busy ? '🔓' : (last ? '💰' : '🔐')}
+      </span>
       {busy ? 'Decrypting...' : (last ? `My Bid: ${last} ETH` : 'Decrypt My Bid')}
     </button>
   );
