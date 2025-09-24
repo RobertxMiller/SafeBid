@@ -81,8 +81,9 @@
     "build:ts": "tsc --project tsconfig.json",
     "typechain": "cross-env TS_NODE_TRANSPILE_ONLY=true hardhat typechain",
     "deploy:sepolia": "hardhat deploy --network sepolia",
-    "deploy:sepolia:full": "node scripts/deploy-and-update.js",
-    "frontend:dev": "cd frontend && npm run dev",
+    "sync:frontend": "node scripts/sync_frontend.js",
+    "deploy:sepolia:sync": "npm run deploy:sepolia && npm run sync:frontend",
+    "frontend:dev": "cd ui && npm run dev",
     "setup:sepolia": "echo 'Please follow the steps in deploy-sepolia.md'"
   },
   "overrides": {
