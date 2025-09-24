@@ -163,7 +163,9 @@ export default function Home() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <h2 style={{ marginTop: 0 }}>Auctions</h2>
             <button onClick={refresh} disabled={loading} style={{ padding: '6px 10px' }}>{loading ? 'Loading...' : 'Refresh'}</button>
+            
           </div>
+          <p>You bid price is encrypted</p>
           {auctions.length === 0 && <div>No auctions</div>}
           <div style={{ display: 'grid', gap: 12 }}>
             {auctions.map(a => (
@@ -188,6 +190,7 @@ export default function Home() {
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                   <button onClick={() => onCheckEnd(a.id)} disabled={!a.active || a.ended} style={{ padding: '6px 10px' }}>Check End</button>
+                  <DecryptMyBidButton a={a} address={address} publicClient={publicClient} zama={zama} signerPromise={signerPromise} />
                   {address === a.seller && (
                     <button onClick={() => onEnd(a.id)} disabled={!a.active || a.ended} style={{ padding: '6px 10px' }}>End</button>
                   )}
@@ -255,4 +258,52 @@ function formatDuration(seconds: bigint) {
   if (m || h) parts.push(`${m}m`);
   parts.push(`${sec}s`);
   return parts.join(' ');
+}
+
+function DecryptMyBidButton({ a, address, publicClient, zama, signerPromise }: { a: AuctionItem; address?: Address; publicClient: any; zama: any; signerPromise: Promise<any> | undefined }) {
+  const [busy, setBusy] = useState(false);
+  const [last, setLast] = useState<string | null>(null);
+  const onClick = async () => {
+    try {
+      if (!address) { window.alert('请先连接钱包'); return; }
+      if (!zama) { window.alert('加密服务未就绪'); return; }
+      if (!publicClient) { window.alert('网络未就绪'); return; }
+      setBusy(true);
+      // Find latest bid from this user
+      const count = await publicClient.readContract({ address: SAFEBID_ADDRESS as Address, abi: abi as any, functionName: 'getBidCount', args: [a.id] }) as bigint;
+      let handle: string | null = null;
+      for (let i = count - 1n; i >= 0; i--) {
+        const rec = await publicClient.readContract({ address: SAFEBID_ADDRESS as Address, abi: abi as any, functionName: 'auctionBids', args: [a.id, i] }) as any;
+        const [bidder, encryptedAmount] = rec as [Address, `0x${string}`, bigint, boolean];
+        if (bidder.toLowerCase() === address.toLowerCase()) { handle = encryptedAmount as string; break; }
+        if (i === 0n) break;
+      }
+      if (!handle) { window.alert('No Bid Yet'); return; }
+
+      const signer = await signerPromise!;
+      const keypair = zama.generateKeypair();
+      const startTimeStamp = Math.floor(Date.now() / 1000).toString();
+      const durationDays = '7';
+      const contracts = [SAFEBID_ADDRESS];
+      const eip712 = zama.createEIP712(keypair.publicKey, contracts, startTimeStamp, durationDays);
+      const signature = await signer.signTypedData(eip712.domain, { UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification }, eip712.message);
+      const pairs = [{ handle, contractAddress: SAFEBID_ADDRESS }];
+      const res = await zama.userDecrypt(pairs, keypair.privateKey, keypair.publicKey, signature.replace('0x',''), contracts, signer.address, startTimeStamp, durationDays);
+      const raw = res[handle];
+      const SCALE = 1e9;
+      const eth = (Number(raw) / SCALE).toString();
+      setLast(eth);
+      window.alert(`Your Bid: ${eth} ETH`);
+    } catch (e:any) {
+      console.error(e);
+      window.alert(e?.message || 'Decrypt failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button onClick={onClick} disabled={busy || !address} style={{ padding: '6px 10px' }}>
+      {busy ? 'Decrypting...' : (last ? `My Bid: ${last} ETH` : 'Decrypt My Bid')}
+    </button>
+  );
 }
