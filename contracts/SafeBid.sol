@@ -25,8 +25,8 @@ contract SafeBid is SepoliaConfig {
         bool valid;
     }
 
-    // Tests use a 60s timeout; keep aligned with tests
-    uint256 public constant BID_TIMEOUT = 60;
+    // Auction ends if no bids for 10 minutes (600s)
+    uint256 public constant BID_TIMEOUT = 600;
 
     // Auctions storage
     mapping(uint256 => Auction) public auctions;
@@ -191,4 +191,3 @@ contract SafeBid is SepoliaConfig {
         return highestBid[auctionId];
     }
 }
-
