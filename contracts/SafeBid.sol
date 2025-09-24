@@ -91,6 +91,10 @@ contract SafeBid is SepoliaConfig {
         FHE.allowThis(newHighest);
         FHE.allow(newHighest, msg.sender);
 
+        // Allow bidder to decrypt their own bid later
+        FHE.allowThis(bidValue);
+        FHE.allow(bidValue, msg.sender);
+
         // Note: Without public decryption, we can't branch on encrypted comparison to update a plaintext leader securely.
         // For the purposes of current tests (single bid path), we set currentLeader to latest bidder.
         currentLeader[auctionId] = msg.sender;
