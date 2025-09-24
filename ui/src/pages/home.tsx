@@ -32,6 +32,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const { instance: zama, isLoading: zamaLoading, error: zamaError } = useZamaInstance();
   const signerPromise = useEthersSigner();
+  const hasContract = typeof SAFEBID_ADDRESS === 'string' && SAFEBID_ADDRESS?.length === 42;
 
   const contract = useMemo(() => ({
     address: SAFEBID_ADDRESS as Address,
@@ -58,9 +59,10 @@ export default function Home() {
 
   const [name, setName] = useState('');
   const [priceEth, setPriceEth] = useState('');
-  const [startInSeconds, setStartInSeconds] = useState(300);
+  // start time fixed to now + 30s by requirement
 
   async function writeWithEthers(method: string, args: any[], value?: bigint) {
+    if (!hasContract) throw new Error('Contract address not configured');
     if (!signerPromise) throw new Error('No wallet');
     const signer = await signerPromise;
     const c = new ethers.Contract(SAFEBID_ADDRESS, abi as any, signer);
@@ -71,7 +73,7 @@ export default function Home() {
   async function onCreateAuction(e: React.FormEvent) {
     e.preventDefault();
     const startPrice = ethers.parseEther(priceEth || '0');
-    const startTime = BigInt(Math.floor(Date.now() / 1000) + Number(startInSeconds));
+    const startTime = BigInt(Math.floor(Date.now() / 1000) + 30);
     await writeWithEthers('createAuction', [name, startPrice, startTime]);
     setName(''); setPriceEth('');
     await refresh();
@@ -111,13 +113,17 @@ export default function Home() {
     <div>
       <Header />
       <main style={{ maxWidth: 920, margin: '0 auto', padding: 16 }}>
+        {!hasContract && (
+          <div style={{ background: '#fff3cd', color: '#664d03', padding: 12, borderRadius: 8, marginBottom: 12 }}>
+            Contract address not configured. Please deploy and run `npm run sync:frontend`.
+          </div>
+        )}
         <section style={{ background: '#fff', padding: 16, borderRadius: 8, marginBottom: 16 }}>
           <h2 style={{ marginTop: 0 }}>Create Auction</h2>
           <form onSubmit={onCreateAuction} style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
             <input placeholder="Item name" value={name} onChange={e => setName(e.target.value)} style={{ padding: 8, flex: 1 }} />
             <input placeholder="Start price (ETH)" value={priceEth} onChange={e => setPriceEth(e.target.value)} style={{ padding: 8, width: 180 }} />
-            <input type="number" placeholder="Start in (sec)" value={startInSeconds} onChange={e => setStartInSeconds(Number(e.target.value))} style={{ padding: 8, width: 140 }} />
-            <button type="submit" disabled={!address || !name || !priceEth} style={{ padding: '8px 14px' }}>Create</button>
+            <button type="submit" disabled={!hasContract || !address || !name || !priceEth} style={{ padding: '8px 14px' }}>Create</button>
           </form>
         </section>
 
