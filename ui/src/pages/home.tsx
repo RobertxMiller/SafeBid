@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAccount, usePublicClient } from 'wagmi';
-import { type Address, readContract } from 'viem';
+import { type Address } from 'viem';
 import { ethers } from 'ethers';
 import { Header } from '../components/Header';
 import abi from '../abi/SafeBid.json';
 import { SAFEBID_ADDRESS } from '../config/contracts';
+import { useZamaInstance } from '../hooks/useZamaInstance';
+import { useEthersSigner } from '../hooks/useEthersSigner';
 
 type Auction = {
   id: bigint;
@@ -28,6 +30,8 @@ export default function Home() {
   const publicClient = usePublicClient();
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(false);
+  const { instance: zama, isLoading: zamaLoading, error: zamaError } = useZamaInstance();
+  const signerPromise = useEthersSigner();
 
   const contract = useMemo(() => ({
     address: SAFEBID_ADDRESS as Address,
@@ -38,10 +42,10 @@ export default function Home() {
     if (!publicClient || !SAFEBID_ADDRESS) return;
     setLoading(true);
     try {
-      const total = await readContract(publicClient, { ...contract, functionName: 'getTotalAuctions' }) as bigint;
+      const total = await publicClient.readContract({ ...contract, functionName: 'getTotalAuctions' }) as bigint;
       const items: Auction[] = [];
       for (let i = 0n; i < total; i++) {
-        const a = await readContract(publicClient, { ...contract, functionName: 'getAuction', args: [i] }) as unknown as Auction;
+        const a = await publicClient.readContract({ ...contract, functionName: 'getAuction', args: [i] }) as unknown as Auction;
         items.push(a);
       }
       setAuctions(items);
@@ -57,9 +61,8 @@ export default function Home() {
   const [startInSeconds, setStartInSeconds] = useState(300);
 
   async function writeWithEthers(method: string, args: any[], value?: bigint) {
-    if (!window.ethereum) throw new Error('No wallet');
-    const provider = new ethers.BrowserProvider(window.ethereum as any);
-    const signer = await provider.getSigner();
+    if (!signerPromise) throw new Error('No wallet');
+    const signer = await signerPromise;
     const c = new ethers.Contract(SAFEBID_ADDRESS, abi as any, signer);
     const tx = await c[method](...args, value ? { value } : undefined);
     await tx.wait();
@@ -75,18 +78,11 @@ export default function Home() {
   }
 
   async function onPlaceBid(auctionId: bigint, bidValue: number) {
-    // Encrypt with Zama Relayer SDK
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const { initSDK, createInstance, SepoliaConfig } = await import('@zama-fhe/relayer-sdk/bundle');
-    await initSDK();
-    const cfg = { ...SepoliaConfig, network: (window as any).ethereum } as any;
-    const instance = await createInstance(cfg);
-
-    const buffer = instance.createEncryptedInput(SAFEBID_ADDRESS, address);
+    if (!zama) throw new Error('Encryption not ready');
+    if (!address) throw new Error('Wallet not connected');
+    const buffer = zama.createEncryptedInput(SAFEBID_ADDRESS, address);
     buffer.add32(BigInt(bidValue));
     const encrypted = await buffer.encrypt();
-
     await writeWithEthers('placeBid', [auctionId, encrypted.handles[0], encrypted.inputProof]);
     await refresh();
   }
@@ -140,7 +136,7 @@ export default function Home() {
                 <div style={{ color: '#555', fontSize: 13 }}>Start time: {a.startTime.toString()}</div>
                 <div style={{ marginTop: 8 }}>
                   {a.active && !a.ended && (
-                    <BidBox auctionId={a.id} onPlace={onPlaceBid} />
+                    <BidBox auctionId={a.id} onPlace={onPlaceBid} disabled={zamaLoading || !zama || !!zamaError} />
                   )}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
@@ -167,13 +163,12 @@ export default function Home() {
   );
 }
 
-function BidBox({ auctionId, onPlace }: { auctionId: bigint; onPlace: (id: bigint, bidValue: number) => Promise<void> }) {
+function BidBox({ auctionId, onPlace, disabled }: { auctionId: bigint; onPlace: (id: bigint, bidValue: number) => Promise<void>; disabled?: boolean }) {
   const [bid, setBid] = useState<number>(0);
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <input type="number" placeholder="Bid (u32 scaled)" value={bid} onChange={e => setBid(Number(e.target.value))} style={{ padding: 8, width: 180 }} />
-      <button onClick={() => onPlace(auctionId, bid)} disabled={bid <= 0} style={{ padding: '6px 10px' }}>Place Bid</button>
+      <button onClick={() => onPlace(auctionId, bid)} disabled={disabled || bid <= 0} style={{ padding: '6px 10px' }}>Place Bid</button>
     </div>
   );
 }
-
