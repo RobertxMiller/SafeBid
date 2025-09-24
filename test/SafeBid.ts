@@ -14,7 +14,7 @@ describe("SafeBid", function () {
 
   const ITEM_NAME = "测试拍品";
   const START_PRICE = ethers.parseEther("1.0");
-  const BID_TIMEOUT = 60; // 60秒
+  const BID_TIMEOUT = 600; // 600秒（10分钟）
 
   beforeEach(async function () {
     [owner, seller, bidder1, bidder2] = await ethers.getSigners();
@@ -331,7 +331,8 @@ describe("SafeBid", function () {
 
   describe("View Functions", function () {
     it("Should return correct auction information", async function () {
-      const startTime = Math.floor(Date.now() / 1000) + 3600;
+      const currentBlockTime = (await ethers.provider.getBlock('latest'))!.timestamp;
+      const startTime = currentBlockTime + 3600;
       await safeBid.connect(seller).createAuction(ITEM_NAME, START_PRICE, startTime);
       
       const auction = await safeBid.getAuction(0);
@@ -369,7 +370,8 @@ describe("SafeBid", function () {
     it("Should return total auctions count", async function () {
       expect(await safeBid.getTotalAuctions()).to.equal(0);
 
-      const startTime = Math.floor(Date.now() / 1000) + 3600;
+      const currentBlockTime = (await ethers.provider.getBlock('latest'))!.timestamp;
+      const startTime = currentBlockTime + 3600;
       await safeBid.connect(seller).createAuction(ITEM_NAME, START_PRICE, startTime);
       expect(await safeBid.getTotalAuctions()).to.equal(1);
 
