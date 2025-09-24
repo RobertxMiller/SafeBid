@@ -3,7 +3,7 @@ import { useAccount, usePublicClient } from 'wagmi';
 import { type Address } from 'viem';
 import { ethers } from 'ethers';
 import { Header } from '../components/Header';
-import abi from '../abi/SafeBid.json';
+import abi from '../abi/SafeBid';
 import { SAFEBID_ADDRESS } from '../config/contracts';
 import { useZamaInstance } from '../hooks/useZamaInstance';
 import { useEthersSigner } from '../hooks/useEthersSigner';
@@ -61,11 +61,11 @@ export default function Home() {
     try {
       // Fetch BID_TIMEOUT constant
       try {
-        const bt = await publicClient.readContract({ ...contract, functionName: 'BID_TIMEOUT' }) as bigint;
+        const bt = await publicClient.readContract({ ...contract, functionName: 'BID_TIMEOUT', args: [] }) as bigint;
         if (bt && typeof bt === 'bigint') setBidTimeout(bt);
       } catch {}
 
-      const total = await publicClient.readContract({ ...contract, functionName: 'getTotalAuctions' }) as bigint;
+      const total = await publicClient.readContract({ ...contract, functionName: 'getTotalAuctions', args: [] }) as bigint;
       const items: AuctionItem[] = [];
       for (let i = 0n; i < total; i++) {
         const a = await publicClient.readContract({ ...contract, functionName: 'getAuction', args: [i] }) as unknown as Auction;
