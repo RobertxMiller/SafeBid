@@ -66,7 +66,7 @@ export default function Home() {
     if (!signerPromise) throw new Error('No wallet');
     const signer = await signerPromise;
     const c = new ethers.Contract(SAFEBID_ADDRESS, abi as any, signer);
-    const tx = await c[method](...args, value ? { value } : undefined);
+    const tx = value !== undefined ? await c[method](...args, { value }) : await c[method](...args);
     await tx.wait();
   }
 
